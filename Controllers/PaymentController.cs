@@ -1,10 +1,12 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using System.Threading.Tasks;
 
 namespace RoomManagement.WebAPI.Controllers;
 
 [ApiController]
 [Route("api/payment")]
+[Authorize(Roles = "Admin")]
 public class PaymentController : ControllerBase
 {
 	private readonly CreateVnPayPayment.Handler _createPayment;

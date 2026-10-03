@@ -15,10 +15,9 @@ using Scrutor;
 
 var builder = WebApplication.CreateBuilder(args);       
 // Thêm các dịch vụ cần thiết
-builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options => { options.CustomSchemaIds(type => type.FullName.Replace("+", "-")); }); // Cấu hình mặc định, không yêu cầu khóa bảo mật
-// convert
+// Dùng để đổi enum thành string khi serialize JSON, tránh lỗi khi frontend nhận dữ liệu ( ví dụ : RoomStatus.Empty sẽ được serialize thành "Empty" thay vì 0)
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
@@ -110,7 +109,7 @@ app.UseSwaggerUI(c =>
     c.RoutePrefix = string.Empty; // Chạy cái là ra giao diện Swagger luôn, không cần gõ thêm /swagger
 });
 app.UseCors("AllowFrontend"); // ← phải đặt TRƯỚC app.UseAuthentication()
-app.UseHttpsRedirection();
+app.UseHttpsRedirection(); // Chuyển hướng HTTP sang HTTPS
 app.UseStaticFiles(); // Cho phép phục vụ file tĩnh (ảnh) từ wwwroot
 app.UseAuthentication();
 app.UseAuthorization();
