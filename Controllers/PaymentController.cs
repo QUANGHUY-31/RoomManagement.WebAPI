@@ -6,7 +6,7 @@ namespace RoomManagement.WebAPI.Controllers;
 
 [ApiController]
 [Route("api/payment")]
-[Authorize(Roles = "Admin")]
+[Authorize]
 public class PaymentController : ControllerBase
 {
 	private readonly CreateVnPayPayment.Handler _createPayment;
@@ -32,6 +32,7 @@ public class PaymentController : ControllerBase
 	}
 
 	[HttpGet("vnpay-return")]
+	[AllowAnonymous]
 	public async Task<IActionResult> VnPayReturn()
 	{
 		await _vnPayReturn.Handle(Request.Query);
