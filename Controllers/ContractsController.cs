@@ -36,6 +36,18 @@ public class ContractsController : ControllerBase
         var result = await handler.Handle(request);
         return Ok(result);
     }
+
+    [Authorize(Roles = "Admin")]
+    [HttpPut("{id}/tenants")]
+    public async Task<IActionResult> UpdateTenants(
+        int id,
+        [FromBody] UpdateContractTenants.Request request,
+        [FromServices] UpdateContractTenants.Handler handler)
+    {
+        var result = await handler.Handle(id, request);
+        return Ok(result);
+    }
+
     [Authorize(Roles = "Admin")]
     [HttpGet("{id}")]
     public async Task<IActionResult> GetDetail(

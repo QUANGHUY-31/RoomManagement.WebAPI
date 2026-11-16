@@ -29,5 +29,7 @@ namespace RoomManagement.WebAPI.Domain.Entities
 
         // new 
         public DateTime? PaidAt { get; set; }
+
+        public List<PaymentTransaction> PaymentTransactions { get; set; } = new();
     }
 }

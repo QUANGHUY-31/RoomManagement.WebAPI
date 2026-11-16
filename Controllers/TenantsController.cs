@@ -26,6 +26,16 @@ namespace RoomManagement.WebAPI.Controllers
         { var result = await handler.Handle();
             return Ok(result);
         }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Update(
+            int id,
+            [FromBody] UpdateTenant.Request request,
+            [FromServices] UpdateTenant.Handler handler)
+        {
+            var result = await handler.Handle(id, request);
+            return Ok(result);
+        }
         
     }
 }

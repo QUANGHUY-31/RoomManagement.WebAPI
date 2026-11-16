@@ -134,6 +134,53 @@ namespace RoomManagement.WebAPI.Migrations
                     b.ToTable("ContractTenants");
                 });
 
+            modelBuilder.Entity("RoomManagement.WebAPI.Domain.Entities.PaymentTransaction", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("BankCode")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("BillId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TxnRef")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("VnPayTranNo")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BillId");
+
+                    b.HasIndex("TxnRef")
+                        .IsUnique();
+
+                    b.ToTable("PaymentTransactions");
+                });
+
             modelBuilder.Entity("RoomManagement.WebAPI.Domain.Entities.Room", b =>
                 {
                     b.Property<int>("Id")
@@ -303,6 +350,17 @@ namespace RoomManagement.WebAPI.Migrations
                     b.Navigation("Tenant");
                 });
 
+            modelBuilder.Entity("RoomManagement.WebAPI.Domain.Entities.PaymentTransaction", b =>
+                {
+                    b.HasOne("RoomManagement.WebAPI.Domain.Entities.Bill", "Bill")
+                        .WithMany("PaymentTransactions")
+                        .HasForeignKey("BillId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Bill");
+                });
+
             modelBuilder.Entity("RoomManagement.WebAPI.Domain.Entities.RoomImage", b =>
                 {
                     b.HasOne("RoomManagement.WebAPI.Domain.Entities.Room", "Room")
@@ -322,6 +380,11 @@ namespace RoomManagement.WebAPI.Migrations
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("RoomManagement.WebAPI.Domain.Entities.Bill", b =>
+                {
+                    b.Navigation("PaymentTransactions");
                 });
 
             modelBuilder.Entity("RoomManagement.WebAPI.Domain.Entities.Contract", b =>

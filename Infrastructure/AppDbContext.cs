@@ -13,6 +13,7 @@ namespace RoomManagement.WebAPI.Infrastructure
         public DbSet<Contract> Contracts { get; set; }
         public DbSet<ContractTenant> ContractTenants { get; set; }
         public DbSet<Bill> Bills { get; set; }
+        public DbSet<PaymentTransaction> PaymentTransactions { get; set; }
         public DbSet<User> Users { get; set; }
         public DbSet<RoomImage> RoomImages { get; set; }
 
@@ -40,6 +41,32 @@ namespace RoomManagement.WebAPI.Infrastructure
                .WithOne(u => u.Tenant)
                .HasForeignKey<Tenant>(t => t.UserId)
                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<PaymentTransaction>()
+                .HasOne(payment => payment.Bill)
+                .WithMany(bill => bill.PaymentTransactions)
+                .HasForeignKey(payment => payment.BillId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<PaymentTransaction>()
+                .HasIndex(payment => payment.TxnRef)
+                .IsUnique();
+
+            modelBuilder.Entity<PaymentTransaction>()
+                .Property(payment => payment.TxnRef)
+                .HasMaxLength(100);
+
+            modelBuilder.Entity<PaymentTransaction>()
+                .Property(payment => payment.Amount)
+                .HasPrecision(18, 2);
+
+            modelBuilder.Entity<PaymentTransaction>()
+                .Property(payment => payment.VnPayTranNo)
+                .HasMaxLength(100);
+
+            modelBuilder.Entity<PaymentTransaction>()
+                .Property(payment => payment.BankCode)
+                .HasMaxLength(50);
         }
     }
 }

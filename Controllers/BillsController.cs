@@ -37,6 +37,18 @@ public class BillsController : ControllerBase
         var result = await handler.Handle();
         return Ok(result);
     }
+
+    [Authorize(Roles = "Admin")]
+    [HttpPut("{id}")]
+    public async Task<IActionResult> Update(
+        int id,
+        [FromBody] UpdateBill.Request request,
+        [FromServices] UpdateBill.Handler handler)
+    {
+        var result = await handler.Handle(id, request);
+        return Ok(result);
+    }
+
     // 🔥 API cho tenant xem hóa đơn của mình
     [HttpGet("my-bills")]
     public async Task<IActionResult> GetMyBills(

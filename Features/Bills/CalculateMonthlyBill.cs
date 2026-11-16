@@ -14,7 +14,6 @@ public class CalculateMonthlyBill
 
         public int ElectricityOld { get; set; }
         public int ElectricityNew { get; set; }
-        public int Price { get; set; }
 
         public decimal ElectricityPrice { get; set; }
         public decimal WaterPrice { get; set; }
@@ -45,6 +44,7 @@ public class CalculateMonthlyBill
         {
             // 🔥 1. Check contract
             var contract = await _context.Contracts
+                .Include(c => c.Room)
                 .Include(c => c.Bills)
                 .FirstOrDefaultAsync(c => c.Id == request.ContractId);
 
@@ -65,12 +65,13 @@ public class CalculateMonthlyBill
 
             // 🔥 4. Tính tiền
             var electricityUsed = request.ElectricityNew - request.ElectricityOld;
+            var roomPrice = contract.Room.Price;
 
             var total =
                 (electricityUsed * request.ElectricityPrice) +
                 request.WaterPrice +
                 request.ServicePrice+
-                request.Price;
+                roomPrice;
 
             // 🔥 5. Create bill
             var bill = new Bill
@@ -81,7 +82,7 @@ public class CalculateMonthlyBill
                 ElectricityPrice = request.ElectricityPrice,
                 WaterPrice = request.WaterPrice,
                 ServicePrice = request.ServicePrice,
-                Price = request.Price,
+                Price = roomPrice,
                 Total = total,
                 Status = BillStatus.Unpaid,
                 CreatedAt = DateTime.UtcNow,

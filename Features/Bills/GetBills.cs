@@ -55,9 +55,7 @@ public class GetBills
                     ? b.Contract.Room.RoomNumber
                     : "Không có phòng",
 
-                    Price = b.Contract != null && b.Contract.Room != null
-                    ? b.Contract.Room.Price
-                    : 0,// ✅ Thêm
+                    Price = b.Price,
                     ElectricityOld = b.ElectricityOld,        // ✅ Thêm
                     ElectricityNew = b.ElectricityNew,        // ✅ Thêm
                     ElectricityPrice = b.ElectricityPrice,    // ✅ Thêm

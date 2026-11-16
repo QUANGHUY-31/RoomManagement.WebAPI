@@ -30,6 +30,17 @@ namespace RoomManagement.WebAPI.Controllers
         }
 
         [Authorize(Roles = "Admin")]
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Update(
+        int id,
+        [FromBody] UpdateRoom.Request request,
+        [FromServices] UpdateRoom.Handler handler)
+        {
+            var result = await handler.Handle(id, request);
+            return Ok(result);
+        }
+
+        [Authorize(Roles = "Admin")]
         [HttpDelete("{id}")]
                 public async Task<IActionResult> Delete(
                 int id,

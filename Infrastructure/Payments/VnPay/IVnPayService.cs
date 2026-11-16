@@ -4,7 +4,7 @@ namespace RoomManagement.WebAPI.Infrastructure.Payments.VnPay;
 
 public interface IVnPayService
 {
-	string CreatePaymentUrl(HttpContext context, int orderId, long amount);
+	string CreatePaymentUrl(HttpContext context, string txnRef, long amount);
 
 	bool ValidateSignature(IQueryCollection query);
 

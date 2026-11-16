@@ -1,6 +1,62 @@
 @RoomManagement.WebAPI_HostAddress = http://localhost:5189
+@adminToken = replace-with-admin-jwt
+@tenantToken = replace-with-tenant-jwt
 
 GET {{RoomManagement.WebAPI_HostAddress}}/weatherforecast/
 Accept: application/json
 
 ###
+
+### Update room price, occupancy, and description
+PUT {{RoomManagement.WebAPI_HostAddress}}/api/rooms/1
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "price": 3500000,
+  "maxOccupancy": 3,
+  "description": "Phòng đã cập nhật"
+}
+
+### Update tenant contact and identity information
+PUT {{RoomManagement.WebAPI_HostAddress}}/api/tenants/1
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "name": "Nguyen Van A",
+  "phone": "0900000000",
+  "cccd": "012345678901"
+}
+
+### Update an unpaid bill (room price remains unchanged)
+PUT {{RoomManagement.WebAPI_HostAddress}}/api/bills/1
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "electricityOld": 100,
+  "electricityNew": 150,
+  "electricityPrice": 3500,
+  "waterPrice": 150000,
+  "servicePrice": 100000,
+  "month": 5,
+  "year": 2026
+}
+
+### Update contract tenants and optionally extend the end date
+PUT {{RoomManagement.WebAPI_HostAddress}}/api/contracts/1/tenants
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "tenantIds": [1, 2],
+  "endDate": "2027-05-31T00:00:00"
+}
+
+### Initiate VNPay payment for a bill (requires tenant JWT)
+POST {{RoomManagement.WebAPI_HostAddress}}/api/payment/pay?billId=1
+Authorization: Bearer {{tenantToken}}
+
+### VNPay IPN (normally called by VNPay; configure the public ngrok URL in VNPay)
+GET {{RoomManagement.WebAPI_HostAddress}}/api/payment/vnpay-ipn

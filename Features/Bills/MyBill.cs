@@ -101,11 +101,7 @@ public class MyBill
                             ? b.Contract.Room.RoomNumber
                             : "Không có phòng",
 
-                    Price =
-                        b.Contract != null &&
-                        b.Contract.Room != null
-                            ? b.Contract.Room.Price
-                            : 0,
+                    Price = b.Price,
 
                     ElectricityOld = b.ElectricityOld,
 

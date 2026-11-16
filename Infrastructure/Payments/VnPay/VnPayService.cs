@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
@@ -17,42 +19,44 @@ public class VnPayService : IVnPayService
         _options = options.Value;
     }
 
-    public string CreatePaymentUrl(HttpContext context, int orderId, long amount)
+    public string CreatePaymentUrl(HttpContext context, string txnRef, long amount)
     {
-        var data = new SortedList<string, string>
+        var ipAddress = context.Connection.RemoteIpAddress?.ToString();
+        if (string.IsNullOrWhiteSpace(ipAddress) || ipAddress == "::1")
+        {
+            ipAddress = "127.0.0.1";
+        }
+
+        var data = new SortedDictionary<string, string>(new VnPayCompare())
         {
             { "vnp_Version", "2.1.0" },
             { "vnp_Command", "pay" },
             { "vnp_TmnCode", _options.TmnCode },
-            { "vnp_Amount", (amount * 100).ToString() },
-            { "vnp_CreateDate", DateTime.Now.ToString("yyyyMMddHHmmss") },
+            { "vnp_Amount", checked(amount * 100).ToString(CultureInfo.InvariantCulture) },
+            { "vnp_CreateDate", DateTimeOffset.UtcNow.ToOffset(TimeSpan.FromHours(7))
+                .ToString("yyyyMMddHHmmss", CultureInfo.InvariantCulture) },
             { "vnp_CurrCode", "VND" },
-            { "vnp_IpAddr", context.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1" },
+            { "vnp_IpAddr", ipAddress },
             { "vnp_Locale", "vn" },
-            { "vnp_OrderInfo", $"Thanhtoanhoadon{orderId}" },
+            { "vnp_OrderInfo", $"Thanhtoanhoadon{txnRef}" },
             { "vnp_OrderType", "other" },
             { "vnp_ReturnUrl", _options.ReturnUrl },
-            { "vnp_TxnRef", orderId.ToString() },
-            { "vnp_BankCode", "VNPAYQR" }
+            { "vnp_TxnRef", txnRef }
+            // Không gán cứng vnp_BankCode để VNPay mở trang chọn phương thức thanh toán
         };
 
-        // 🔥 1. RAW DATA (KHÔNG encode)
-        var rawData = string.Join("&", data.Select(x =>
-            $"{x.Key}={x.Value}"));
-
-        // 🔥 2. HASH từ rawData
-        var hash = HmacSHA512(_options.HashSecret, rawData);
-
-        // 🔥 3. ENCODE để build URL (chỉ encode ở đây)
+        // Chuẩn VNPay 2.1.0: Dùng WebUtility.UrlEncode cho cả key và value trước khi băm
         var query = string.Join("&", data.Select(x =>
             $"{WebUtility.UrlEncode(x.Key)}={WebUtility.UrlEncode(x.Value)}"));
+
+        var hash = HmacSHA512(_options.HashSecret, query);
 
         return $"{_options.BaseUrl}?{query}&vnp_SecureHash={hash}";
     }
 
     public bool ValidateSignature(IQueryCollection query)
     {
-        var data = new SortedList<string, string>();
+        var data = new SortedDictionary<string, string>(new VnPayCompare());
 
         foreach (var (key, value) in query)
         {
@@ -61,19 +65,32 @@ public class VnPayService : IVnPayService
                 && key != "vnp_SecureHash"
                 && key != "vnp_SecureHashType")
             {
-                data.Add(key, value.ToString() ?? "");
+                var val = value.ToString();
+                if (!string.IsNullOrEmpty(val))
+                {
+                    data.TryAdd(key, val);
+                }
             }
         }
 
-        // 🔥 KHÔNG encode lại
+        var receivedHash = query["vnp_SecureHash"].ToString();
+        if (string.IsNullOrWhiteSpace(receivedHash))
+            return false;
+
         var rawData = string.Join("&", data.Select(x =>
-            $"{x.Key}={x.Value}"));
+            $"{WebUtility.UrlEncode(x.Key)}={WebUtility.UrlEncode(x.Value)}"));
 
-        var hash = HmacSHA512(_options.HashSecret, rawData);
-
-        var vnpSecureHash = query["vnp_SecureHash"].ToString();
-
-        return hash.Equals(vnpSecureHash, StringComparison.OrdinalIgnoreCase);
+        var expectedHash = HmacSHA512(_options.HashSecret, rawData);
+        try
+        {
+            return CryptographicOperations.FixedTimeEquals(
+                Convert.FromHexString(expectedHash),
+                Convert.FromHexString(receivedHash));
+        }
+        catch (FormatException)
+        {
+            return false;
+        }
     }
 
     public string GetResponseData(IQueryCollection query, string key)
@@ -85,6 +102,19 @@ public class VnPayService : IVnPayService
     {
         using var hmac = new HMACSHA512(Encoding.UTF8.GetBytes(key));
         var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(input));
-        return BitConverter.ToString(hash).Replace("-", "").ToLower();
+        return Convert.ToHexString(hash).ToLowerInvariant();
+    }
+}
+
+public class VnPayCompare : IComparer<string>
+{
+    public int Compare(string? x, string? y)
+    {
+        if (x == y) return 0;
+        if (x == null) return -1;
+        if (y == null) return 1;
+
+        var vnpCompare = CompareInfo.GetCompareInfo("en-US");
+        return vnpCompare.Compare(x, y, CompareOptions.Ordinal);
     }
 }

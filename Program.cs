@@ -6,17 +6,41 @@ using RoomManagement.WebAPI.Features.Dashboard;
 using RoomManagement.WebAPI.Features.Rooms;
 using RoomManagement.WebAPI.Features.Tenants;
 using RoomManagement.WebAPI.Features.Identity;
+using RoomManagement.WebAPI.Features.Payments;
 using RoomManagement.WebAPI.Infrastructure;
 using RoomManagement.WebAPI.Infrastructure.Payments.VnPay;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi;
 using System.Text;
 using Scrutor;
 
 var builder = WebApplication.CreateBuilder(args);       
 // Thêm các dịch vụ cần thiết
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(options => { options.CustomSchemaIds(type => type.FullName.Replace("+", "-")); }); // Cấu hình mặc định, không yêu cầu khóa bảo mật
+builder.Services.AddSwaggerGen(options =>
+{
+    options.CustomSchemaIds(type => type.FullName.Replace("+", "-"));
+
+    // Cấu hình JWT Bearer trong Swagger UI (hiển thị nút Authorize hình ổ khóa)
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Nhập token JWT của bạn (không cần gõ chữ 'Bearer ', chỉ cần dán token):"
+    });
+
+    options.AddSecurityRequirement(doc => new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecuritySchemeReference("Bearer", doc),
+            new List<string>()
+        }
+    });
+});
 // Dùng để đổi enum thành string khi serialize JSON, tránh lỗi khi frontend nhận dữ liệu ( ví dụ : RoomStatus.Empty sẽ được serialize thành "Empty" thay vì 0)
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
@@ -57,6 +81,7 @@ builder.Services.AddScoped<MyBill.Handler>();
 
 builder.Services.AddScoped<GetRooms.Handler>();
 builder.Services.AddScoped<CreateRoom.Handler>();
+builder.Services.AddScoped<UpdateRoom.Handler>();
 builder.Services.AddScoped<DeleteRoom.Handler>();
 builder.Services.AddScoped<GetRoomDetail.Handler>();
 
@@ -65,9 +90,11 @@ builder.Services.AddScoped<SetMainRoomImage.Handler>();
 
 
 builder.Services.AddScoped<RegisterTenant.Handler>();
+builder.Services.AddScoped<UpdateTenant.Handler>();
 builder.Services.AddScoped<GetTenants.Handler>();
 
 builder.Services.AddScoped<CreateContract.Handler>();
+builder.Services.AddScoped<UpdateContractTenants.Handler>();
 builder.Services.AddScoped<EndContract.Handler>();
 builder.Services.AddScoped<GetContractDetail.Handler>();
 builder.Services.AddScoped<GetContracts.Handler>();
@@ -75,6 +102,7 @@ builder.Services.AddScoped<GetContracts.Handler>();
 builder.Services.AddScoped<GetDashboardSummary.Handler>();
 
 builder.Services.AddScoped<CalculateMonthlyBill.Handler>();
+builder.Services.AddScoped<UpdateBill.Handler>();
 builder.Services.AddScoped<MarkAsPaid.Handler>();
 builder.Services.AddScoped<GetBills.Handler>();
 
@@ -83,6 +111,7 @@ builder.Services.AddScoped<RegisterUser.Handler>();
 
 builder.Services.AddScoped<CreateVnPayPayment.Handler>();
 builder.Services.AddScoped<VnPayReturn.Handler>();
+builder.Services.AddScoped<VnPayIpn.Handler>();
 
 builder.Services.Configure<VnPayOptions>(
     builder.Configuration.GetSection("VnPay"));

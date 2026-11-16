@@ -107,6 +107,19 @@ Mở file `appsettings.json` và cập nhật các thông số sau:
 
 > ⚠️ **Lưu ý bảo mật:** Không commit `appsettings.json` chứa key/secret thật lên GitHub. Sử dụng [User Secrets](https://learn.microsoft.com/en-us/aspnet/core/security/app-secrets) hoặc biến môi trường cho production.
 
+### 2.1 Cấu hình VNPay IPN khi chạy local
+
+VNPay gửi IPN đến URL công khai của API. Khi chạy thử bằng ngrok, cấu hình URL
+`https://<ngrok-domain>/api/payment/vnpay-ipn` trong phần cấu hình IPN của
+VNPay Sandbox. IPN là server-to-server callback; không thay thế `ReturnUrl`,
+đây là URL đưa trình duyệt người dùng quay lại ứng dụng.
+
+API chỉ xác nhận hóa đơn từ IPN hợp lệ. Sau khi xác nhận thành công, người thuê
+có thể tải lại danh sách hóa đơn; Admin cũng thấy trạng thái đã cập nhật trong
+danh sách hóa đơn. Khi Admin xác nhận tiền mặt, giao dịch VNPay đang chờ chưa
+đủ 15 phút sẽ chặn thao tác; các giao dịch Pending đã quá 15 phút được chuyển
+sang `Expired` trước khi hóa đơn được xác nhận thanh toán tiền mặt.
+
 ### 3. Chạy Migration và khởi động
 
 ```bash
